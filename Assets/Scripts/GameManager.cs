@@ -1,7 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.IO.IsolatedStorage;
-using UnityEditor.U2D.Aseprite;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -12,35 +10,59 @@ public class GameManager : MonoBehaviour
     [SerializeField] Sprite[] opponentSprites = new Sprite[6];
     [SerializeField] Sprite emptySprite;
 
+    [Header("End Screen")]
+    [SerializeField] Canvas endScreen;
+
     Board opponentBoard;
     Board playerBoard;
     SpriteRenderer rollDisplay;
     int currentValue;
-    int turns;
     bool playerTurn = true;
     bool dieReady;
     bool opponentReady = true;
 
+    EndScreenManager endScreenManager;
+
     private void Start()
     {
+        // set up the boards
         opponentBoard = GetComponentsInChildren<Board>()[0];
         playerBoard = GetComponentsInChildren<Board>()[1];
+
+        Color opponentColor = new Color32(221, 91, 113, 255); // #dd5b71
+        Color playerColor = new Color32(119, 179, 254, 255);  // #77b3fe
+
+        opponentBoard.SetScoreboardColor(opponentColor);
+        playerBoard.SetScoreboardColor(playerColor);
+
+        // set up the UIs
         rollDisplay = GetComponentInChildren<SpriteRenderer>();
+
+        endScreenManager = endScreen.GetComponent<EndScreenManager>();
+        endScreenManager.DisableEndScreen();
+
+        // start the game
         StartCoroutine(RollDie());
-        turns = 0;
     }
 
     private void Update()
     {
         // have the computer go
-        if (!playerTurn && dieReady && turns <= 18 && opponentReady)
+        if (!playerTurn && dieReady && opponentReady)
         {
             StartCoroutine(OpponentTurn());
         }
 
         if (playerBoard.IsFull() && playerTurn || opponentBoard.IsFull() && !playerTurn)
         {
-            Time.timeScale = 0;
+
+            // display stats
+            string winner = playerBoard.Score > opponentBoard.Score ? "You " : "The opponent ";
+            endScreenManager.EnableEndScreen(winner, playerBoard.Score, opponentBoard.Score);
+
+            // show the restart button and the darker background
+            endScreen.transform.GetChild(2).gameObject.SetActive(true);
+            endScreen.transform.GetChild(3).gameObject.SetActive(true);
         }
     }
 
@@ -50,7 +72,7 @@ public class GameManager : MonoBehaviour
     public void TriggerTileHit(Tile tile)
     {
         // see if it's the player's turn or not
-        if (playerTurn)
+        if (playerTurn && dieReady)
         {
             // get the column we're working with
             int col = tile.column;

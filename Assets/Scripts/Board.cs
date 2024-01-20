@@ -1,9 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.IO.IsolatedStorage;
-using System.Runtime.CompilerServices;
 using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class Board : MonoBehaviour
@@ -17,6 +12,8 @@ public class Board : MonoBehaviour
     TMP_Text scoreDisplay;
     Tile[,] board;
     int score;
+
+    public int Score { get { return score; } }
 
     protected void Start()
     {
@@ -134,5 +131,10 @@ public class Board : MonoBehaviour
     public void DisableBorder(Tile t)
     {
         t.DisableBorder();
+    }
+
+    public void SetScoreboardColor(Color color)
+    {
+        scoreDisplay.faceColor = color;
     }
 }

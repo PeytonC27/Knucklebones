@@ -44,7 +44,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e6d6e88b00f5aa4cb9e3dbd237b152c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tile: {fileID: 1384379225832168941, guid: 3642ad076f67a2341a7e95b3e5ffa4b0, type: 3}
+  tile: {fileID: 3453627685821637623, guid: 5838980d5816b4f48a82431d07a68ff0, type: 3}
   scoreBoard: {fileID: 5459397617445478847, guid: d0d882997afb429499cdc1bdbd88a27d, type: 3}
   yCoordinates:
   - 3
