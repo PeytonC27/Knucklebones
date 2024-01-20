@@ -10,6 +10,7 @@ public class Tile : MonoBehaviour
     GameManager gameManager;
     SpriteRenderer spriteRenderer;
     GameObject border;
+    public bool isPlayableTile = false;
 
     // Start is called before the first frame update
     void Start()
@@ -17,8 +18,11 @@ public class Tile : MonoBehaviour
         gameManager = GameObject.FindGameObjectWithTag("GameManager").GetComponent<GameManager>();
         spriteRenderer = GetComponent<SpriteRenderer>();
 
-        border = transform.GetChild(0).gameObject;
-        border.SetActive(false);
+        if (isPlayableTile)
+        {
+            border = transform.GetChild(0).gameObject;
+            border.SetActive(false);
+        }
     }
 
     // Update is called once per frame
@@ -31,7 +35,6 @@ public class Tile : MonoBehaviour
 
             if (hit.collider != null)
             {
-                Debug.Log("Hit " + hit.transform.gameObject.name);
                 gameManager.TriggerTileHit(hit.transform.gameObject.GetComponent<Tile>());
             }
         }

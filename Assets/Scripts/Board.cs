@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 
@@ -54,9 +55,10 @@ public class Board : MonoBehaviour
     /// <summary>
     /// Adds up the current score of the board
     /// </summary>
-    public void RefreshScore()
+    public bool RefreshScore()
     {
         score = 0;
+        bool bonusTriggered = false;
         for (int x = 0; x < board.GetLength(0); x++)
         {
             Tile t1 = board[x, 0];
@@ -64,13 +66,59 @@ public class Board : MonoBehaviour
             Tile t3 = board[x, 2];
 
             score += ScoreCheck(t1, t2, t3);
-
         }
 
         scoreDisplay.text = score.ToString();
+        return bonusTriggered;
     }
 
-    int ScoreCheck(Tile t1, Tile t2, Tile t3)
+    /// <summary>
+    /// Adds up the current score of the board
+    /// <param name="lastValue">The last die placed</param>
+    /// <param name="column">The column where the die was placed</param>
+    /// </summary>
+    public bool RefreshScore(int lastValue, int column)
+    {
+        score = 0;
+        bool bonusTriggered = false;
+        for (int x = 0; x < board.GetLength(0); x++)
+        {
+            Tile t1 = board[x, 0];
+            Tile t2 = board[x, 1];
+            Tile t3 = board[x, 2];
+
+            if (x == column)
+                bonusTriggered = CheckIfBonusTriggered(t1, t2, t3, lastValue);
+
+            score += ScoreCheck(t1, t2, t3);
+        }
+
+        scoreDisplay.text = score.ToString();
+        return bonusTriggered;
+    }
+
+    /// <summary>
+    /// Checks whether the most recent value in a specific column triggered a bonus
+    /// </summary>
+    /// <param name="t1"></param>
+    /// <param name="t2"></param>
+    /// <param name="t3"></param>
+    /// <param name="lastValue"></param>
+    /// <param name="column"></param>
+    private bool CheckIfBonusTriggered(Tile t1, Tile t2, Tile t3, int lastValue)
+    {
+        // when the column only has 2 die
+        if (t2.hasValue && !t3.hasValue)
+            if (t1.value == t2.value && t1.value == lastValue)
+                return true;
+        // when the colum has all three
+        if (t3.hasValue)
+            if ((t2.value == t3.value || t1.value == t3.value) && t3.value == lastValue)
+                return true;
+        return false;
+    }
+
+    public int ScoreCheck(Tile t1, Tile t2, Tile t3)
     {
         int a = t1.value;
         int b = t2.value;
@@ -136,5 +184,15 @@ public class Board : MonoBehaviour
     public void SetScoreboardColor(Color color)
     {
         scoreDisplay.faceColor = color;
+    }
+
+    public int[,] GetScoreGrid()
+    {
+        int[,] scoreGrid = new int[3, 3];
+        for (int x = 0; x < board.GetLength(0); x++)
+            for (int y = 0; y < board.GetLength(1); y++)
+                scoreGrid[x, y] = board[x, y].value;
+
+        return scoreGrid;
     }
 }

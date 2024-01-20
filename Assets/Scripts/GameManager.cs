@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting.Antlr3.Runtime;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -13,9 +14,16 @@ public class GameManager : MonoBehaviour
     [Header("End Screen")]
     [SerializeField] Canvas endScreen;
 
+    [Header("Sound")]
+    [SerializeField] GameObject audioManager;
+
+
+    AudioManager audioPlayer;
     Board opponentBoard;
     Board playerBoard;
     SpriteRenderer rollDisplay;
+    OpponentAI ai;
+
     int currentValue;
     bool playerTurn = true;
     bool dieReady;
@@ -25,6 +33,11 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
+        Debug.Log(HardMode.isHardMode);
+
+        // get the sound manager
+        audioPlayer = audioManager.GetComponent<AudioManager>();
+
         // set up the boards
         opponentBoard = GetComponentsInChildren<Board>()[0];
         playerBoard = GetComponentsInChildren<Board>()[1];
@@ -34,6 +47,10 @@ public class GameManager : MonoBehaviour
 
         opponentBoard.SetScoreboardColor(opponentColor);
         playerBoard.SetScoreboardColor(playerColor);
+
+        // setup the AI
+        ai = GetComponent<OpponentAI>();
+        ai.SetBoards(playerBoard, opponentBoard);
 
         // set up the UIs
         rollDisplay = GetComponentInChildren<SpriteRenderer>();
@@ -57,7 +74,7 @@ public class GameManager : MonoBehaviour
         {
 
             // display stats
-            string winner = playerBoard.Score > opponentBoard.Score ? "You " : "The opponent ";
+            string winner = playerBoard.Score > opponentBoard.Score ? "You" : "The opponent";
             endScreenManager.EnableEndScreen(winner, playerBoard.Score, opponentBoard.Score);
 
             // show the restart button and the darker background
@@ -78,7 +95,7 @@ public class GameManager : MonoBehaviour
             int col = tile.column;
 
             // go through each row and see where to place the new die
-            Tile[,] board = playerBoard.GetTiles();
+            Board board = playerBoard;
 
             // make sure a slot was actually picked, if not, do nothing
             if (!FillNextSlot(board, col))
@@ -87,7 +104,6 @@ public class GameManager : MonoBehaviour
             }
 
             playerTurn = false;
-            tile.board.RefreshScore();
             StartCoroutine(RollDie());
         }
     }
@@ -102,40 +118,19 @@ public class GameManager : MonoBehaviour
         int col;
 
         // artificially have the opponent "think"
-        //yield return new WaitForSeconds(Random.value * 1 + 1);
+        yield return new WaitForSeconds(Random.value * 0.5f + 0.5f);
 
         // now have the opponent fill in the slot
-        col = EasyOpponent();
-        FillNextSlot(opponentBoard.GetTiles(), col);
+        col = ai.PlaceDie(HardMode.isHardMode, currentValue);
+        FillNextSlot(opponentBoard, col);
 
         // end the opponent's turn
         playerTurn = true;
         opponentReady = true;
-        opponentBoard.RefreshScore();
         StartCoroutine(RollDie());
         yield return new WaitForEndOfFrame();
     }
 
-    // =============================================================== //
-    // ==================== OPPONENT DIFFICULTIES ==================== //
-    // =============================================================== //
-    int EasyOpponent()
-    {
-        // pick a random, open column
-        // columns are open if the third slot is open
-        Tile[,] t = opponentBoard.GetTiles();
-
-        // start by getting all the open columns
-        List<int> openCols = new();
-
-        for (int i = 0; i < 3; i++)
-            if (!t[i, 2].hasValue)
-                openCols.Add(i);
-
-        // grab one of them randomly
-        int col = openCols[Random.Range(0, openCols.Count)];
-        return col;
-    }
 
     // ================================================= //
     // ==================== HELPERS ==================== //
@@ -147,24 +142,32 @@ public class GameManager : MonoBehaviour
     /// <param name="board">The board to check</param>
     /// <param name="col">The column to check</param>
     /// <returns>True if the die was placed, false if it couldn't</returns>
-    bool FillNextSlot(Tile[,] board, int col)
+    bool FillNextSlot(Board board, int col)
     {
+        Tile[,] tiles = board.GetTiles();
         for (int i = 0; i < 3; i++)
         {
-            if (!board[col, i].hasValue)
+            if (!tiles[col, i].hasValue)
             {
-                board[col, i].value = currentValue;
-                board[col, i].hasValue = true;
+                tiles[col, i].value = currentValue;
+                tiles[col, i].hasValue = true;
 
                 // slot fill depends on whos turn it is
                 Sprite sprite = (playerTurn) ? playerSprites[currentValue - 1] : opponentSprites[currentValue - 1];
-                board[col, i].UpdateSprite(sprite);
+                tiles[col, i].UpdateSprite(sprite);
 
-                CancelOpposingDice(
+                bool capture = CancelOpposingDice(
                     playerTurn ? opponentBoard : playerBoard,
                     currentValue,
                     col
                 );
+
+                bool bonusTriggered = board.RefreshScore(currentValue, col);
+
+                if (capture)
+                    audioPlayer.PlayCaptureSound();
+                else
+                    audioPlayer.PlayDiePlacement(bonusTriggered);
 
                 return true;
             }
@@ -172,9 +175,10 @@ public class GameManager : MonoBehaviour
         return false;
     }
 
-    void CancelOpposingDice(Board opposingBoard, int valuePlaced, int column)
+    bool CancelOpposingDice(Board opposingBoard, int valuePlaced, int column)
     {
         // remove tiles
+        bool wasCancellation = false;
         Tile[,] opposingTiles = opposingBoard.GetTiles();
         for (int i = 0; i < 3; i++)
         {
@@ -183,6 +187,7 @@ public class GameManager : MonoBehaviour
                 opposingTiles[column, i].value = 0;
                 opposingTiles[column, i].hasValue = false;
                 opposingTiles[column, i].UpdateSprite(emptySprite);
+                wasCancellation = true;
             }
         }
 
@@ -195,6 +200,7 @@ public class GameManager : MonoBehaviour
             opposingTiles[column, 0].SwapAssets(opposingTiles[column, 1]);
 
         opposingBoard.RefreshScore();
+        return wasCancellation;
     }
 
     IEnumerator RollDie()
