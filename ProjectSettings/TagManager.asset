@@ -33,7 +33,7 @@ TagManager:
   - 
   - 
   - 
-  - 
+  - Back
   - 
   - 
   - 
@@ -41,4 +41,7 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: Border
+    uniqueID: 2206392191
     locked: 0

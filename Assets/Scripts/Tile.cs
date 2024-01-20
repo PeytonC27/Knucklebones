@@ -11,12 +11,16 @@ public class Tile : MonoBehaviour
 
     GameManager gameManager;
     SpriteRenderer spriteRenderer;
+    GameObject border;
 
     // Start is called before the first frame update
     void Start()
     {
         gameManager = GameObject.FindGameObjectWithTag("GameManager").GetComponent<GameManager>();
         spriteRenderer = GetComponent<SpriteRenderer>();
+
+        border = transform.GetChild(0).gameObject;
+        border.SetActive(false);
     }
 
     // Update is called once per frame
@@ -66,5 +70,15 @@ public class Tile : MonoBehaviour
         value = tempVal;
         hasValue = tempHasValue;
         spriteRenderer.sprite = tempSprite;
+    }
+
+    public void EnableBorder()
+    {
+        border.SetActive(true);
+    }
+
+    public void DisableBorder()
+    {
+        border.SetActive(false);
     }
 }

@@ -41,6 +41,7 @@ public class Board : MonoBehaviour
                 board[i, j].name = "Tile " + i + " " + j;
                 board[i, j].column = i;
                 board[i, j].board = this.GetComponent<Board>();
+                board[i, j].GetComponent<SpriteRenderer>().sortingOrder = 1;
                 j++;
             }
             j = 0;
@@ -61,29 +62,59 @@ public class Board : MonoBehaviour
         score = 0;
         for (int x = 0; x < board.GetLength(0); x++)
         {
-            int a = board[x, 0].value;
-            int b = board[x, 1].value;
-            int c = board[x, 2].value;
+            Tile t1 = board[x, 0];
+            Tile t2 = board[x, 1];
+            Tile t3 = board[x, 2];
 
-            // all three same
-            if (a == b && b == c)
-                score += (a * 3) * 3;
-            // doubles
-            else if (a == b || a == c || b == c)
-            {
-                if (a == b)
-                    score += (a + b) * 2 + c;
-                else if (a == c)
-                    score += (a + c) * 2 + b;
-                else
-                    score += (b + c) * 2 + a;
-            }
-            // only singles
-            else 
-                score += a + b + c;
+            score += ScoreCheck(t1, t2, t3);
+
         }
 
         scoreDisplay.text = score.ToString();
+    }
+
+    int ScoreCheck(Tile t1, Tile t2, Tile t3)
+    {
+        int a = t1.value;
+        int b = t2.value;
+        int c = t3.value;
+
+        // go through every combo
+        if (a == b && b == c && a != 0)
+        {
+            t1.EnableBorder();
+            t2.EnableBorder();
+            t3.EnableBorder();
+            return (a + b + c) * 3;
+        }
+        else if (a == b && b != c && a != 0)
+        {
+            t1.EnableBorder();
+            t2.EnableBorder();
+            t3.DisableBorder();
+            return (a + b) * 2 + c;
+        }
+        else if (a == c && b != c && a != 0)
+        {
+            t1.EnableBorder();
+            t2.DisableBorder();
+            t3.EnableBorder();
+            return (a + c) * 2 + b;
+        }
+        else if (b == c && a != c && b != 0)
+        {
+            t1.DisableBorder();
+            t2.EnableBorder();
+            t3.EnableBorder();
+            return (b + c) * 2 + a;
+        }
+        else
+        {
+            t1.DisableBorder();
+            t2.DisableBorder();
+            t3.DisableBorder();
+            return (a + b + c);
+        }
     }
 
     public bool IsFull()
@@ -93,5 +124,15 @@ public class Board : MonoBehaviour
                 if (!board[x, y].hasValue)
                     return false;
         return true;
+    }
+
+    public void EnableBorder(Tile t)
+    {
+        t.EnableBorder();
+    }
+
+    public void DisableBorder(Tile t)
+    {
+        t.DisableBorder();
     }
 }
